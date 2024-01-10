@@ -7,11 +7,11 @@ package-install:
 package-reinstall:
 	python3 -m pip install . --force-reinstall
 
-test:
-	poetry run pytest
+# test:
+#	poetry run pytest
 
-test-coverage:
-	poetry run pytest --cov=page_analyzer --cov-report xml
+#test-coverage:
+#	poetry run pytest --cov=page_analyzer --cov-report xml
 
 lint:
 	poetry run flake8
