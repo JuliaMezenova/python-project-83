@@ -10,7 +10,7 @@ packages = [{include = "page_analyzer"}]
 python = "^3.8"
 flask = "^3.0"
 gunicorn = "^21.2.0"
-
+python-dotenv = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core"]
