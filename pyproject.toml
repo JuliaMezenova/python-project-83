@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "hexlet-code"
+version = "0.1.0"
+description = ""
+authors = ["Julia Mezenova <julia21moon86@mail.ru>"]
+readme = "README.md"
+packages = [{include = "page_analyzer"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+flask = "^3.0"
+gunicorn = "^21.2.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+flake8 = "^4.0.1"
