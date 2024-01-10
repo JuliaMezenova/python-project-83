@@ -1,6 +1,12 @@
 install:
 	poetry install
 
+package-install:
+	python3 -m pip install --user dist/hexlet_code-0.1.0-py3-none-any.whl
+
+package-reinstall:
+	python3 -m pip install . --force-reinstall
+
 test:
 	poetry run pytest
 
@@ -18,13 +24,8 @@ check: selfcheck test lint
 build: check
 	poetry build
 
-.PHONY: install test lint selfcheck check build
-
 publish:
 	poetry publish --dry-run
-
-package-install:
-	python3 -m pip install --user --force-reinstall dist/*.whl
 
 dev:
 	poetry run flask --app page_analyzer:app run
