@@ -16,13 +16,8 @@ package-reinstall:
 lint:
 	poetry run flake8
 
-selfcheck:
-	poetry check
-
-check: selfcheck test lint
-
-build: check
-	poetry build
+build:
+	./build.sh
 
 publish:
 	poetry publish --dry-run
