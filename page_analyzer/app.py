@@ -35,7 +35,7 @@ def add_url():
     normalized_url = normalize(url)
     errors = validate(normalized_url)
     if errors:
-        flash(errors, 'errors')
+        flash(errors['url'], 'errors')
         messages = get_flashed_messages(with_categories=True)
         return render_template(
             'index.html',
