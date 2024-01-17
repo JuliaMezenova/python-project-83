@@ -43,7 +43,7 @@ def add_url():
             messages=messages
         ), 422
     with conn:
-        with conn.cursor as curs:
+        with conn.cursor() as curs:
             curs.execute(
                 "SELECT * FROM urls WHERE name = %s;",
                 (normalized_url,)
@@ -70,7 +70,7 @@ def add_url():
 @app.get("/urls/<int:id>")
 def show_url(id):
     with conn:
-        with conn.cursor as curs:
+        with conn.cursor() as curs:
             curs.execute("SELECT * FROM urls WHERE id = %s;", (id,))
             result_url = curs.fetchone()
         curs.close()
@@ -86,7 +86,7 @@ def show_url(id):
 @app.get("/urls")
 def show_urls():
     with conn:
-        with conn.cursor as curs:
+        with conn.cursor() as curs:
             curs.execute("SELECT * FROM urls ORDER BY id DESC;")
             result_urls = curs.fetchall()
         curs.close()
