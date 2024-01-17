@@ -3,7 +3,7 @@ import validators
 
 def validate(url):
     errors = {}
-    if url == '':
+    if not url:
         errors['url'] = 'URL обязателен'
     if not validators.url(url):
         errors['url'] = 'Некорректный URL'
