@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+  {% include "head.html" %}
+  <body class="min-vh-100 d-flex flex-column">
+  {% include "header.html" %}
+  <main class="flex-grow-1">
+    <div class="contain-3">
+      <h1>Сайты</h1>
+
+  <div class="table-responsive">
+    <table class="table-bordered table-hover text-nowrap" data-test="urls">
+      <thead>
+      <tr>
+	<th>ID</th>
+	<th>Имя</th>
+      </tr>
+      </thead>
+      <tbody>
+	{% for url in urls %}
+	<tr>
+	  <td>{{ url.id }}</td>
+	  <td>{{ url.name }}</td>
+	</tr>
+	{% endfor %}
+      </tbody>
+    </table>
+  </div>
+    </div>
+  </main>
+  {% include "footer.html" %}
+  </body>
+</html>
