@@ -2,11 +2,9 @@ import validators
 
 
 def validate(url):
-    errors = {}
     if not url:
-        errors['url'] = 'URL обязателен'
+        return 'URL обязателен'
     if not validators.url(url):
-        errors['url'] = 'Некорректный URL'
+        return 'Некорректный URL'
     if len(url) > 255:
-        errors['url'] = 'URL не может превышать 255 символов'
-    return errors
+        return 'URL не может превышать 255 символов'

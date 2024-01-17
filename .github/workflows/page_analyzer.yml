@@ -1,4 +1,4 @@
-name: Python CiI
+name: page_analyzer
 
 on:
   - push

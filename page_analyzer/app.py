@@ -36,7 +36,7 @@ def add_url():
     normalized_url = normalize(url)
     errors = validate(normalized_url)
     if errors:
-        flash(errors['url'], 'error')
+        flash(errors, 'error')
         messages = get_flashed_messages(with_categories=True)
         return render_template(
             'index.html',
@@ -47,7 +47,7 @@ def add_url():
         with conn.cursor() as curs:
             curs.execute(
                 "SELECT * FROM urls WHERE name = %s;",
-                (normalized_url,)
+                (normalized_url, )
             )
             result_url = curs.fetchone() #тут будет кортеж
             if result_url:
@@ -60,10 +60,9 @@ def add_url():
                 )
                 conn.commit()
                 id = curs.lastrowid
-                curs.execute("SELECT * FROM urls WHERE id = %s;", (id,))
+                curs.execute("SELECT * FROM urls WHERE id = %s;", (id, ))
                 result_url = curs.fetchone()
                 flash("Страница успешно добавлена", 'success')
-        curs.close()
     conn.close()
     return redirect(url_for('show_url', id=id))
 
@@ -72,9 +71,8 @@ def add_url():
 def show_url(id):
     with conn:
         with conn.cursor() as curs:
-            curs.execute("SELECT * FROM urls WHERE id = %s;", (id,))
+            curs.execute("SELECT * FROM urls WHERE id = %s;", (id, ))
             result_url = curs.fetchone()
-        curs.close()
     conn.close()
     messages = get_flashed_messages(with_categories=True)
     return render_template(
