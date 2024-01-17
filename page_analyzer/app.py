@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 import os
 from .validator import validate
 from .normalizator import normalize
+import datetime
 
 
 load_dotenv()  # take environment variables from .env.
@@ -48,17 +49,17 @@ def add_url():
                 "SELECT * FROM urls WHERE name = %s;",
                 (normalized_url,)
             )
-            result_url = curs.fetchone()
+            result_url = curs.fetchone() #тут будет кортеж
             if result_url:
                 flash("Cтраница уже существует", 'info')
                 id = result_url.id
             else:
                 curs.execute(
-                    "INSERT INTO urls (name) VALUES (%s);",
-                    (normalized_url,)
+                    "INSERT INTO urls (name, created_at) VALUES (%s, %s) RETURNING id;",
+                    (normalized_url, datetime.datetime.now())
                 )
                 conn.commit()
-                id = curs.fetchone()[0]
+                id = curs.execute("SELECT LAST_INSERT_ID();")
                 curs.execute("SELECT * FROM urls WHERE id = %s;", (id,))
                 result_url = curs.fetchone()
                 flash("Страница успешно добавлена", 'success')
