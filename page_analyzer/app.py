@@ -36,7 +36,7 @@ def add_url():
     normalized_url = normalize(url)
     errors = validate(normalized_url)
     if errors:
-        flash(errors['url'], 'errors')
+        flash(errors['url'], 'error')
         messages = get_flashed_messages(with_categories=True)
         return render_template(
             'index.html',
@@ -59,7 +59,7 @@ def add_url():
                     (normalized_url, datetime.datetime.now())
                 )
                 conn.commit()
-                id = curs.execute("SELECT LAST_INSERT_ID();")
+                id = curs.lastrowid
                 curs.execute("SELECT * FROM urls WHERE id = %s;", (id,))
                 result_url = curs.fetchone()
                 flash("Страница успешно добавлена", 'success')
