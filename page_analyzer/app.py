@@ -50,13 +50,14 @@ def add_url():
                 "SELECT * FROM urls WHERE name = %s;",
                 (normalized_url, )
             )
-            result = curs.fetchone() #тут будет кортеж
+            result = curs.fetchone()  # тут будет кортеж
             if result:
                 flash("Cтраница уже существует", 'info')
                 id = result[0]
             else:
                 curs.execute(
-                    "INSERT INTO urls (name, created_at) VALUES (%s, %s) RETURNING id;",
+                    "INSERT INTO urls (name, created_at) \
+                    VALUES (%s, %s) RETURNING id;",
                     (normalized_url, date.today())
                 )
                 conn.commit()
@@ -75,7 +76,6 @@ def show_url(id):
             curs.execute("SELECT * FROM urls WHERE id = %s;", (id, ))
             result = curs.fetchone()
     messages = get_flashed_messages(with_categories=True)
-    
     return render_template(
         "show_url.html",
         url=result,
