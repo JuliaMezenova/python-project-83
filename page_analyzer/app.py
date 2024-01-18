@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 import os
 from .validator import validate
 from .normalizator import normalize
-import datetime
+from datetime import date
 
 
 load_dotenv()  # take environment variables from .env.
@@ -21,7 +21,7 @@ load_dotenv()  # take environment variables from .env.
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 DATABASE_URL = os.getenv('DATABASE_URL')
-conn = psycopg2.connect(DATABASE_URL)
+# conn = psycopg2.connect(DATABASE_URL)
 
 
 @app.route("/")
@@ -33,8 +33,7 @@ def index():
 @app.post("/urls")
 def add_url():
     url = request.form.get('url')
-    normalized_url = normalize(url)
-    errors = validate(normalized_url)
+    errors = validate(url)
     if errors:
         flash(errors, 'error')
         messages = get_flashed_messages(with_categories=True)
@@ -43,54 +42,54 @@ def add_url():
             input_url=url,
             messages=messages
         ), 422
-    with conn:
+
+    normalized_url = normalize(url)
+    with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as curs:
             curs.execute(
                 "SELECT * FROM urls WHERE name = %s;",
                 (normalized_url, )
             )
-            result_url = curs.fetchone() #тут будет кортеж
-            if result_url:
+            result = curs.fetchone() #тут будет кортеж
+            if result:
                 flash("Cтраница уже существует", 'info')
-                id = result_url.id
+                id = result[0]
             else:
                 curs.execute(
                     "INSERT INTO urls (name, created_at) VALUES (%s, %s) RETURNING id;",
-                    (normalized_url, datetime.datetime.now())
+                    (normalized_url, date.today())
                 )
                 conn.commit()
-                id = curs.lastrowid
-                curs.execute("SELECT * FROM urls WHERE id = %s;", (id, ))
-                result_url = curs.fetchone()
+                id = curs.fetchone()[0]
+                # curs.execute("SELECT * FROM urls WHERE id = %s;", (id, ))
+                # result = curs.fetchone()
                 flash("Страница успешно добавлена", 'success')
-    conn.close()
-    return redirect(url_for('show_url', id=id))
+
+    return redirect(url_for('show_url', id=id), 302)
 
 
 @app.get("/urls/<int:id>")
 def show_url(id):
-    with conn:
+    with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as curs:
             curs.execute("SELECT * FROM urls WHERE id = %s;", (id, ))
-            result_url = curs.fetchone()
-    conn.close()
+            result = curs.fetchone()
     messages = get_flashed_messages(with_categories=True)
+    
     return render_template(
         "show_url.html",
-        url=result_url,
+        url=result,
         messages=messages
     )
 
 
 @app.get("/urls")
 def show_urls():
-    with conn:
+    with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as curs:
             curs.execute("SELECT * FROM urls ORDER BY id DESC;")
-            result_urls = curs.fetchall()
-        curs.close()
-    conn.close()
+            result = curs.fetchall()
     return render_template(
         "show_all_urls.html",
-        urls=result_urls
+        urls=result
     )
