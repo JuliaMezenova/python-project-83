@@ -73,7 +73,8 @@ def show_url(id):
             curs.execute("SELECT * FROM urls WHERE id = %s;", (id, ))
             url = curs.fetchone()
             curs.execute(
-                "SELECT id, url_id, status_code, h1, title, description, created_at FROM url_checks WHERE url_id = %s \
+                "SELECT id, url_id, status_code, h1, title, \
+                description, created_at FROM url_checks WHERE url_id = %s \
                 ORDER BY id DESC;", (id, )
             )
             checks = curs.fetchall()
@@ -105,10 +106,11 @@ def check_url(id):
         with conn.cursor() as curs:
             curs.execute("SELECT * FROM urls WHERE id = %s;", (id, ))
             url_id = curs.fetchone()[0]
-            curs.execute("INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at) \
+            curs.execute(
+                "INSERT INTO url_checks \
+                (url_id, status_code, h1, title, description, created_at) \
                 VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
                 (url_id, 200, 'h1', 'title', 'description', date.today())
             )
-            conn.commit()
     flash("Страница успешно проверена", 'success')
     return redirect(url_for("show_url", id=id), 302)
