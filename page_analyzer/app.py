@@ -21,7 +21,6 @@ load_dotenv()  # take environment variables from .env.
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 DATABASE_URL = os.getenv('DATABASE_URL')
-# conn = psycopg2.connect(DATABASE_URL)
 
 
 @app.route("/")
@@ -62,8 +61,6 @@ def add_url():
                 )
                 conn.commit()
                 id = curs.fetchone()[0]
-                # curs.execute("SELECT * FROM urls WHERE id = %s;", (id, ))
-                # result = curs.fetchone()
                 flash("Страница успешно добавлена", 'success')
 
     return redirect(url_for('show_url', id=id), 302)
@@ -74,12 +71,19 @@ def show_url(id):
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as curs:
             curs.execute("SELECT * FROM urls WHERE id = %s;", (id, ))
-            result = curs.fetchone()
+            url = curs.fetchone()
+            curs.execute(
+                "SELECT id, url_id, status_code, h1, title, description, created_at FROM url_checks WHERE url_id = %s \
+                ORDER BY id DESC;", (id, )
+            )
+            checks = curs.fetchall()
     messages = get_flashed_messages(with_categories=True)
     return render_template(
         "show_url.html",
-        url=result,
-        messages=messages
+        url_id=url[0],
+        url=url,
+        messages=messages,
+        checks=checks
     )
 
 
@@ -93,3 +97,18 @@ def show_urls():
         "show_all_urls.html",
         urls=result
     )
+
+
+@app.post("/urls/<int:id>/checks")
+def check_url(id):
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor() as curs:
+            curs.execute("SELECT * FROM urls WHERE id = %s;", (id, ))
+            url_id = curs.fetchone()[0]
+            curs.execute("INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at) \
+                VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
+                (url_id, 200, 'h1', 'title', 'description', date.today())
+            )
+            conn.commit()
+    flash("Страница успешно проверена", 'success')
+    return redirect(url_for("show_url", id=id), 302)
