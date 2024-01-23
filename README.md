@@ -5,4 +5,13 @@
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/b98c48cf5e7737fb7e92/maintainability)](https://codeclimate.com/github/JuliaMezenova/python-project-83/maintainability)
 
-[You can see the result "Page Analyzer](https://page-analyzer-ynqn.onrender.com/)
+[You can see the result "Page Analyzer"](https://page-analyzer-ynqn.onrender.com/)
+
+Install
+Prepare the database.
+Before installing the application, prepare your environment variables:
+DATABASE_URL - variable for connecting to the database.
+SECRET_KEY
+After cloning from GitHub, run the commands:
+make build
+make start

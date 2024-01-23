@@ -15,6 +15,7 @@ from .validator import validate
 from .normalizator import normalize
 from datetime import date
 from .response import get_response
+from .html_parser import get_tags_content_from_response
 
 
 load_dotenv()  # take environment variables from .env.
@@ -131,14 +132,16 @@ def check_url(id):
                 flash('Произошла ошибка при проверке', 'error')
                 return redirect(url_for("show_url", id=id), 302)
             status_code = response.status_code
+            tags_content = get_tags_content_from_response(response)
             curs.execute(
                 "INSERT INTO url_checks \
                 (url_id, status_code, h1, title, description, created_at) \
                 VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;", (
-                    url_id, status_code,
-                    'h1',
-                    'title',
-                    'description',
+                    url_id,
+                    status_code,
+                    tags_content['h1'],
+                    tags_content['title'],
+                    tags_content['description'],
                     date.today()
                 )
             )
