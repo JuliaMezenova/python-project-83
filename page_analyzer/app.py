@@ -14,6 +14,7 @@ import os
 from .validator import validate
 from .normalizator import normalize
 from datetime import date
+from .response import get_response
 
 
 load_dotenv()  # take environment variables from .env.
@@ -92,11 +93,29 @@ def show_url(id):
 def show_urls():
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as curs:
-            curs.execute("SELECT * FROM urls ORDER BY id DESC;")
-            result = curs.fetchall()
+            curs.execute("SELECT urls.id, urls.name, url_checks.created_at, \
+                url_checks.status_code \
+                FROM urls AS urls LEFT JOIN \
+                (SELECT DISTINCT ON (url_checks.url_id) \
+                url_checks.url_id, url_checks.status_code, \
+                url_checks.created_at FROM url_checks \
+                ORDER BY url_checks.url_id ASC, url_checks.created_at DESC) \
+                AS url_checks ON urls.id = url_checks.url_id \
+                ORDER BY urls.id DESC;")
+            urls = curs.fetchall()
+            list_of_urls = []
+            for url in urls:
+                list_of_urls.append({
+                    'id': url[0],
+                    'name': url[1],
+                    'date_of_last_check': url[2],
+                    'status_code': url[3],
+                })
+
     return render_template(
         "show_all_urls.html",
-        urls=result
+        urls=urls,
+        checks=list_of_urls
     )
 
 
@@ -105,12 +124,23 @@ def check_url(id):
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as curs:
             curs.execute("SELECT * FROM urls WHERE id = %s;", (id, ))
-            url_id = curs.fetchone()[0]
+            url_id, url_name, url_created_at = curs.fetchone()
+
+            response = get_response(url_name)
+            if not response:
+                flash('Произошла ошибка при проверке', 'error')
+                return redirect(url_for("show_url", id=id), 302)
+            status_code = response.status_code
             curs.execute(
                 "INSERT INTO url_checks \
                 (url_id, status_code, h1, title, description, created_at) \
-                VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
-                (url_id, 200, 'h1', 'title', 'description', date.today())
+                VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;", (
+                    url_id, status_code,
+                    'h1',
+                    'title',
+                    'description',
+                    date.today()
+                )
             )
     flash("Страница успешно проверена", 'success')
     return redirect(url_for("show_url", id=id), 302)
