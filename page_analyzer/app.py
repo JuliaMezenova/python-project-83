@@ -53,7 +53,7 @@ def add_url():
             )
             result = curs.fetchone()  # тут будет кортеж
             if result:
-                flash("Cтраница уже существует", 'info')
+                flash("Страница уже существует", 'info')
                 id = result[0]
             else:
                 curs.execute(
