@@ -17,10 +17,10 @@ By scanning a website's URLs, a single-page analyzer can quickly identify issues
 
 Prepare the database.
 
-Before installing the application, prepare your environment variables:\
-+ **DATABASE_URL** - variable for connecting to the database.\
+Before installing the application, prepare your environment variables:
++ **DATABASE_URL** - variable for connecting to the database.
 + **SECRET_KEY**
 
-After cloning from GitHub, run the commands:\
-+ *make build*\
+After cloning from GitHub, run the commands:
++ *make build*
 + *make start*
