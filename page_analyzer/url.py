@@ -1,4 +1,5 @@
 import validators
+from urllib.parse import urlparse
 
 
 def validate(url):
@@ -8,3 +9,8 @@ def validate(url):
         return 'URL не может превышать 255 символов'
     if not validators.url(url):
         return 'Некорректный URL'
+
+
+def normalize(url):
+    o = urlparse(url)
+    return f'{o.scheme}://{o.netloc}'

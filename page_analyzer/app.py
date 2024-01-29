@@ -7,12 +7,10 @@ from flask import (
     url_for,
     redirect
 )
-import psycopg2
-import psycopg2.extras
 from dotenv import load_dotenv
 import os
-from .validator import validate
-from .normalizator import normalize
+from .url import validate, normalize
+from . import db_worker
 from datetime import date
 from .response import get_response
 from .html_parser import get_tags_content_from_response
@@ -45,41 +43,25 @@ def add_url():
         ), 422
 
     normalized_url = normalize(url)
-    with psycopg2.connect(DATABASE_URL) as conn:
-        with conn.cursor() as curs:
-            curs.execute(
-                "SELECT * FROM urls WHERE name = %s;",
-                (normalized_url, )
-            )
-            result = curs.fetchone()  # тут будет кортеж
-            if result:
-                flash("Страница уже существует", 'info')
-                id = result[0]
-            else:
-                curs.execute(
-                    "INSERT INTO urls (name, created_at) \
-                    VALUES (%s, %s) RETURNING id;",
-                    (normalized_url, date.today())
-                )
-                conn.commit()
-                id = curs.fetchone()[0]
-                flash("Страница успешно добавлена", 'success')
+    connection = db_worker.connection()
+    url = db_worker.get_url_by_name(connection, normalized_url)
+    if url:
+        id = url[0]
+        flash("Страница уже существует", 'info')
+    else:
+        connection = db_worker.connection()
+        id = db_worker.add_url_to_db_urls(connection, normalized_url)
+        flash("Страница успешно добавлена", 'success')
 
     return redirect(url_for('show_url', id=id), 302)
 
 
 @app.get("/urls/<int:id>")
 def show_url(id):
-    with psycopg2.connect(DATABASE_URL) as conn:
-        with conn.cursor() as curs:
-            curs.execute("SELECT * FROM urls WHERE id = %s;", (id, ))
-            url = curs.fetchone()
-            curs.execute(
-                "SELECT id, url_id, status_code, h1, title, \
-                description, created_at FROM url_checks WHERE url_id = %s \
-                ORDER BY id DESC;", (id, )
-            )
-            checks = curs.fetchall()
+    connection = db_worker.connection()
+    url = db_worker.get_url_by_id(connection, id)
+    connection = db_worker.connection()
+    checks = db_worker.get_url_check(connection, id)
     messages = get_flashed_messages(with_categories=True)
     return render_template(
         "show_url.html",
@@ -92,58 +74,34 @@ def show_url(id):
 
 @app.get("/urls")
 def show_urls():
-    with psycopg2.connect(DATABASE_URL) as conn:
-        with conn.cursor() as curs:
-            curs.execute("SELECT urls.id, urls.name, url_checks.created_at, \
-                url_checks.status_code \
-                FROM urls AS urls LEFT JOIN \
-                (SELECT DISTINCT ON (url_checks.url_id) \
-                url_checks.url_id, url_checks.status_code, \
-                url_checks.created_at FROM url_checks \
-                ORDER BY url_checks.url_id ASC, url_checks.created_at DESC) \
-                AS url_checks ON urls.id = url_checks.url_id \
-                ORDER BY urls.id DESC;")
-            urls = curs.fetchall()
-            list_of_urls = []
-            for url in urls:
-                list_of_urls.append({
-                    'id': url[0],
-                    'name': url[1],
-                    'date_of_last_check': url[2],
-                    'status_code': url[3],
-                })
-
+    connection = db_worker.connection()
+    list_of_urls = db_worker.get_urls_checks_for_show_urls(connection)
     return render_template(
         "show_all_urls.html",
-        urls=urls,
         checks=list_of_urls
     )
 
 
 @app.post("/urls/<int:id>/checks")
 def check_url(id):
-    with psycopg2.connect(DATABASE_URL) as conn:
-        with conn.cursor() as curs:
-            curs.execute("SELECT * FROM urls WHERE id = %s;", (id, ))
-            url_id, url_name, url_created_at = curs.fetchone()
-
-            response = get_response(url_name)
-            if not response:
-                flash('Произошла ошибка при проверке', 'error')
-                return redirect(url_for("show_url", id=id), 302)
-            status_code = response.status_code
-            tags_content = get_tags_content_from_response(response)
-            curs.execute(
-                "INSERT INTO url_checks \
-                (url_id, status_code, h1, title, description, created_at) \
-                VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;", (
-                    url_id,
-                    status_code,
-                    tags_content['h1'],
-                    tags_content['title'],
-                    tags_content['description'],
-                    date.today()
-                )
-            )
+    connection = db_worker.connection()
+    url = db_worker.get_url_by_id(connection, id)
+    url_id, url_name, url_created_at = url
+    response = get_response(url_name)
+    if not response:
+        flash('Произошла ошибка при проверке', 'error')
+        return redirect(url_for("show_url", id=id), 302)
+    status_code = response.status_code
+    tags_content = get_tags_content_from_response(response)
+    check_result = {
+        'url_id': url_id,
+        'status_code': status_code,
+        'h1': tags_content['h1'],
+        'title': tags_content['title'],
+        'description': tags_content['description'],
+        'created_at': date.today(),
+    }
+    connection = db_worker.connection()
+    db_worker.add_url_check(connection, check_result)
     flash("Страница успешно проверена", 'success')
     return redirect(url_for("show_url", id=id), 302)
